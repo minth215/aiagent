@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}목록·검색{% endblock %}
+{% block content %}
+
+<form class="search-bar" method="get" action="/">
+  <input type="text" name="q" value="{{ current.q }}" placeholder="통합 검색 (프로그램명, 경로, 파일명, 담당자, 비고 …)">
+  <select name="biz_category">
+    <option value="">업무분류 전체</option>
+    {% for v in filters.biz_categories %}
+      <option value="{{ v }}" {% if v == current.biz_category %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+  <select name="program_type">
+    <option value="">프로그램유형 전체</option>
+    {% for v in filters.program_types %}
+      <option value="{{ v }}" {% if v == current.program_type %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+  <select name="change_type">
+    <option value="">구분 전체</option>
+    {% for v in filters.change_types %}
+      <option value="{{ v }}" {% if v == current.change_type %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+  <select name="manager">
+    <option value="">담당자 전체</option>
+    {% for v in filters.managers %}
+      <option value="{{ v }}" {% if v == current.manager %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn">검색</button>
+  <a href="/" class="btn btn-ghost">초기화</a>
+</form>
+
+<div class="toolbar">
+  <span class="count">총 <strong>{{ programs|length }}</strong>건</span>
+  <div class="spacer"></div>
+  <a href="/export/excel{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-excel">⬇ 프로그램 목록 (Excel)</a>
+  <a href="/export/pptx{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-ppt">⬇ 업무흐름도 (PPT)</a>
+</div>
+<p class="hint">※ 내보내기는 현재 검색/필터 결과를 그대로 반영합니다.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>No</th>
+        {% for name, label, typ in columns %}<th>{{ label }}</th>{% endfor %}
+        <th>관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for program in programs %}
+        {% set d = program.as_dict() %}
+        <tr>
+          <td class="c">{{ loop.index }}</td>
+          {% for name, label, typ in columns %}
+            <td class="{{ 'l' if typ in ('text','textarea') else 'c' }}">{{ d[name] if d[name] is not none else '' }}</td>
+          {% endfor %}
+          <td class="c nowrap">
+            <a href="/edit/{{ program.id }}" class="btn btn-sm">수정</a>
+            <form method="post" action="/delete/{{ program.id }}" style="display:inline" onsubmit="return confirm('삭제하시겠습니까?');">
+              <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="{{ columns|length + 2 }}" class="empty">데이터가 없습니다. <a href="/new">신규 등록</a>하세요.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

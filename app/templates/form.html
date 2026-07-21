@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h2 class="page-title">{{ title }}</h2>
+
+<form class="entry-form" method="post" action="{{ action }}">
+  <div class="grid">
+    {% for name, label, typ in columns %}
+      <div class="field {{ 'full' if typ == 'textarea' else '' }}">
+        <label for="{{ name }}">{{ label }}
+          {% if name == 'change_type' %}<span class="mut">(신규/수정)</span>{% endif %}
+        </label>
+        {% if typ == 'textarea' %}
+          <textarea id="{{ name }}" name="{{ name }}" rows="3">{{ program[name] if program and program[name] is not none else '' }}</textarea>
+        {% elif typ == 'date' %}
+          <input type="date" id="{{ name }}" name="{{ name }}" value="{{ program[name] if program and program[name] is not none else '' }}">
+        {% else %}
+          <input type="text" id="{{ name }}" name="{{ name }}" value="{{ program[name] if program and program[name] is not none else '' }}">
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">저장</button>
+    <a href="/" class="btn btn-ghost">취소</a>
+  </div>
+</form>
+{% endblock %}

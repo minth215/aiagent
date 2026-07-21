@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}프로그램 목록 관리{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand">📋 프로그램 목록 / 업무흐름도 관리</a>
+    <nav>
+      <a href="/">목록·검색</a>
+      <a href="/new" class="btn btn-primary">+ 신규 등록</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="foot">폐쇄망 대응 · 오프라인 동작 · LLM 없이 운영 가능</footer>
+</body>
+</html>
