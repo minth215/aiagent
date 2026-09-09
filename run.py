@@ -14,8 +14,17 @@
     --no-browser       브라우저 자동 실행 안 함
 """
 import argparse
+import socket
 import threading
 import webbrowser
+
+
+def _port_open(host: str, port: int) -> bool:
+    """해당 host:port에 이미 서버가 떠 있는지 확인."""
+    probe = "127.0.0.1" if host in ("0.0.0.0", "localhost") else host
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        return s.connect_ex((probe, port)) == 0
 
 
 def _refresh(workspace: str, base_package: str | None, replace: bool):
@@ -51,10 +60,20 @@ def main():
     ap.add_argument("--no-browser", action="store_true")
     args = ap.parse_args()
 
+    url = f"http://{args.host if args.host != '0.0.0.0' else 'localhost'}:{args.port}"
+
+    # 이미 실행 중이면 새 서버를 띄우지 않고 브라우저만 연다 (아이콘 중복 더블클릭 대비).
+    if _port_open(args.host, args.port):
+        print(f"이미 실행 중입니다 → {url}")
+        if args.workspace:
+            print("  (추출은 브라우저의 '소스 추출' 메뉴에서 진행하세요.)")
+        if not args.no_browser:
+            webbrowser.open(url)
+        return
+
     if args.workspace:
         _refresh(args.workspace, args.base_package, args.replace)
 
-    url = f"http://{args.host if args.host != '0.0.0.0' else 'localhost'}:{args.port}"
     print(f"\n웹앱 실행: {url}  (종료: Ctrl+C)")
     if not args.no_browser:
         threading.Timer(1.2, lambda: webbrowser.open(url)).start()

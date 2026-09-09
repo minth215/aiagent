@@ -62,37 +62,36 @@ python run.py --workspace sample_workspace --base-package com.acme
 대신 아래 방법으로 "터미널에 명령을 치지 않고 브라우저 주소만으로 들어가는" 경험을 만들 수 있습니다.
 세 가지는 함께 쓸 수 있습니다.
 
-### A. 더블클릭으로 실행 (터미널 불필요)
+### 바탕화면 아이콘으로 실행 (권장 · CMD 창 없음)
 
-- **Windows**: `start.bat` 더블클릭 (또는 검은 창 없이 조용히 띄우려면 `start-hidden.vbs`)
-- **macOS/Linux**: `start.command` 더블클릭 (최초 1회 `chmod +x start.command`)
+**Windows**
+1. `install-desktop-icon.bat` 을 **한 번** 더블클릭
+   → 가상환경·의존성 설치 후 바탕화면에 **`프로그램목록관리`** 아이콘을 만듭니다.
+2. 이후로는 그 **바탕화면 아이콘만 더블클릭** → CMD 창 없이 웹앱이 뜨고 브라우저가 열립니다.
 
-→ 서버가 뜨고 브라우저가 자동으로 열립니다. 최초 실행 시 가상환경·의존성을 자동 설치합니다(인터넷 필요).
+- 아이콘은 내부적으로 `start-hidden.vbs`(콘솔 숨김)를 실행합니다.
+- 이미 실행 중일 때 다시 더블클릭하면 새 서버를 띄우지 않고 **브라우저만** 엽니다.
 
-### B. 로그인 시 자동 실행 (항상 켜두기)
+**macOS/Linux**: `start.command` 더블클릭 (최초 1회 `chmod +x start.command`).
+Dock/바탕화면에 별칭(alias)을 만들어 두면 동일하게 아이콘 실행이 됩니다.
 
-한 번 등록해두면 PC를 켤 때마다 자동으로 떠 있어, 브라우저 북마크만 누르면 됩니다.
+> 최초 설치에는 인터넷이 필요합니다. 폐쇄망이면 `wheels/` 폴더에 미리 받은 whl을 넣어두면
+> 자동으로 오프라인 설치합니다(위 "폐쇄망 오프라인 설치" 참고).
 
-- **Windows**: `Win+R` → `shell:startup` → 열린 시작프로그램 폴더에 `start-hidden.vbs`의 **바로가기**를 넣기
-- **macOS**: 시스템 설정 → 일반 → 로그인 항목에 `start.command` 추가
-- **Linux**: `~/.config/autostart`에 `.desktop` 항목 추가, 또는 systemd --user 서비스
+### 팀 배포 (각자 PC)
 
-### C. 예쁜 로컬 도메인 붙이기 (예: `http://progtool.local`)
+팀원 각자 자기 PC에서 독립적으로 사용합니다(로그인 불필요, 데이터도 각 PC 내부에만 존재).
 
-`localhost:8000` 대신 원하는 이름으로 접속하도록 hosts 파일에 한 줄 추가합니다(관리자 권한 필요).
+1. 이 폴더를 각자 PC에 복사(또는 `git clone`) — 소스가 있는 PC에 두면 됩니다.
+2. `install-desktop-icon.bat` 한 번 실행.
+3. 바탕화면 아이콘 더블클릭 → "소스 추출" 메뉴에서 본인 SVN 워크스페이스 경로 입력 → 사용.
 
-```
-# Windows: C:\Windows\System32\drivers\etc\hosts
-# macOS/Linux: /etc/hosts
-127.0.0.1   progtool.local
-```
+### (선택) 항상 켜두기 / 예쁜 주소
 
-- 그 뒤 브라우저에서 `http://progtool.local:8000` 로 접속.
-- 포트 없이 `http://progtool.local` 로 접속하려면 80포트로 실행: `python run.py --port 80`
-  (Windows는 관리자 콘솔, macOS/Linux는 `sudo` 필요)
-
-> **A+B+C를 합치면**: 로그인하면 자동으로 떠 있고, 브라우저에서 `http://progtool.local`만
-> 치면 들어가는 형태가 됩니다 — 서버 없이 로컬에서.
+- **로그인 시 자동 실행**: `Win+R` → `shell:startup` → 그 폴더에 `start-hidden.vbs` 바로가기 넣기.
+- **로컬 도메인**: hosts 파일에 `127.0.0.1  progtool.local` 추가 후 `http://progtool.local:8000` 접속
+  (포트 없이 쓰려면 `run.py --port 80`, 관리자 권한 필요). 외부 인터넷 도메인이 아니라
+  각 PC 내부에서만 유효한 이름입니다.
 
 브라우저에서 `http://<서버IP>:8000` 접속.
 
