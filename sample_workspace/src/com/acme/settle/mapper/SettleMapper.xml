@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.acme.settle.mapper.SettleMapper">
+
+  <select id="selectSettleList" resultType="com.acme.settle.service.SettleVO">
+    SELECT S.SETTLE_ID, S.MEMBER_ID, M.MEMBER_NM, S.AMOUNT, S.STATUS, S.REG_DT
+    FROM TB_SETTLE S
+    JOIN TB_MEMBER M ON S.MEMBER_ID = M.MEMBER_ID
+    ORDER BY S.REG_DT DESC
+  </select>
+
+  <insert id="insertSettle" parameterType="com.acme.settle.service.SettleVO">
+    INSERT INTO TB_SETTLE (SETTLE_ID, MEMBER_ID, AMOUNT, STATUS, REG_DT)
+    VALUES (SEQ_SETTLE.NEXTVAL, #{memberId}, #{amount}, #{status}, SYSDATE)
+  </insert>
+
+  <update id="updateSettleStatus" parameterType="com.acme.settle.service.SettleVO">
+    UPDATE TB_SETTLE SET STATUS = #{status}, UPD_DT = SYSDATE
+    WHERE SETTLE_ID = #{settleId}
+  </update>
+
+  <update id="updateMemberBalance" parameterType="com.acme.settle.service.SettleVO">
+    UPDATE TB_MEMBER SET SETTLE_BALANCE = SETTLE_BALANCE + #{amount}
+    WHERE MEMBER_ID = #{memberId}
+  </update>
+
+</mapper>

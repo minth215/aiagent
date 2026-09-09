@@ -4,6 +4,9 @@ __pycache__/
 venv/
 *.db
 *.sqlite3
+scratch_*
+*.json
+!/**/templates/**
 .DS_Store
 *.xlsx
 *.pptx

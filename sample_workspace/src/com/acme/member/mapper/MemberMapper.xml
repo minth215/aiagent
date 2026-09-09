@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.acme.member.mapper.MemberMapper">
+
+  <select id="countByMemberId" resultType="int">
+    SELECT COUNT(*) FROM TB_MEMBER WHERE MEMBER_ID = #{memberId}
+  </select>
+
+  <insert id="insertMember" parameterType="com.acme.member.service.MemberVO">
+    INSERT INTO TB_MEMBER (MEMBER_ID, MEMBER_NM, REG_DT)
+    VALUES (#{memberId}, #{memberNm}, SYSDATE)
+  </insert>
+
+</mapper>

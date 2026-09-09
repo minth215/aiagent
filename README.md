@@ -75,8 +75,55 @@ pip download -r requirements.txt -d wheels/
 pip install --no-index --find-links=wheels/ -r requirements.txt
 ```
 
-## 향후 확장 여지
+## 소스 워크스페이스 자동 추출기 (`extract_workspace.py`)
 
-- 소스 경로에서 파일 메타/테이블명(SQL의 FROM·JOIN) 자동 추출 → 입력 반자동화
-- 사내 GPU LLM 연동 시 업무설명 자동 생성·요약
-- 인증/권한(로그인), 첨부파일, 이력 관리
+Eclipse 워크스페이스/프로젝트 소스를 **스캔하여 프로그램 목록을 자동 생성**합니다.
+정규식 기반이라 컴파일되지 않는 레거시 코드에서도 견고하게 동작하며, **LLM이 필요 없습니다.**
+
+```bash
+# 스캔만 (JSON 출력)
+./.venv/bin/python extract_workspace.py sample_workspace -o extract.json
+
+# 스캔 후 DB에 적재 → 웹앱 목록에서 바로 검토
+./.venv/bin/python extract_workspace.py sample_workspace --import
+
+# 회사 패키지 prefix 지정 시 업무분류 추정 정확도 향상
+./.venv/bin/python extract_workspace.py /path/to/workspace --base-package com.acme
+```
+
+추출 항목:
+
+| 구분 | 방식 | 예시 |
+|------|------|------|
+| 프로그램유형 | 확장자 + 애노테이션(@Controller/@Service/@Mapper) + 파일명 규칙 | JSP, Controller, Service, Mapper, Batch, SQL/DDL |
+| 대상 테이블 | SQL/MyBatis의 FROM·JOIN·INTO·UPDATE 파싱 | TB_SETTLE, TB_MEMBER |
+| 업무분류(제안) | 패키지/디렉터리 구조에서 추정 | settle, member |
+| 호출관계 | 타입참조(Controller→Service→Mapper), 매퍼 namespace, JSP↔Controller URL | 8 edges |
+| 업무 힌트 | 클래스 상단 Javadoc 첫 문장 | "정산 신청·승인 처리 로직 구현" |
+
+> 업무분류·업무명 등 **의미적 값은 "제안값"** 입니다. 다음 단계(Claude Code 분석 또는 사람 검토)에서 확정합니다.
+
+## 심화 아키텍처 (3계층)
+
+```
+① 결정적 추출  (extract_workspace.py)   ← LLM 아님. 정확·빠름
+     파일분류 · 테이블 · 호출관계 · 구조
+        │  JSON
+        ▼
+② 의미 분석    (Claude Code 스킬 — 예정)  ← Haiku 4.5
+     ①의 사실을 근거로 업무명·업무설명·처리흐름 초안 작성 (환각 억제)
+        │  DB 적재
+        ▼
+③ 검토·확정·산출물  (본 웹앱)
+     사람이 검토·수정 → Excel(프로그램목록) · PPT(업무흐름도) 생성
+```
+
+**핵심**: LLM에 코드를 통째로 넣지 않는다. ①이 정확한 사실을 뽑고, ②(Haiku)는 "무슨 업무인지"
+의미 레이어만 담당하며, ③에서 사람이 확정한다. → Haiku 4.5로도 실무 품질 확보.
+
+## 향후 로드맵
+
+- [x] ① 결정적 추출기 (파일분류·테이블·호출관계)
+- [ ] ② Claude Code 스킬 `/analyze-workspace` — 추출 결과를 근거로 업무 분석 초안 생성
+- [ ] Excel 일괄 업로드(기존 관리 엑셀 가져오기)
+- [ ] 인증/권한(로그인), 첨부파일, 변경이력
