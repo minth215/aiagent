@@ -56,6 +56,44 @@ python run.py --workspace sample_workspace --base-package com.acme
 > Windows PC 기준으로 `python run.py` 하나면 됩니다. `.sh`/`uvicorn` 직접 실행도 가능하지만
 > `run.py`가 크로스플랫폼이라 가장 간단합니다.
 
+## 터미널 없이 브라우저로만 접속하기
+
+이 도구는 소스가 있는 PC에서 로컬로 동작하므로 외부 인터넷 도메인에는 올리지 않습니다.
+대신 아래 방법으로 "터미널에 명령을 치지 않고 브라우저 주소만으로 들어가는" 경험을 만들 수 있습니다.
+세 가지는 함께 쓸 수 있습니다.
+
+### A. 더블클릭으로 실행 (터미널 불필요)
+
+- **Windows**: `start.bat` 더블클릭 (또는 검은 창 없이 조용히 띄우려면 `start-hidden.vbs`)
+- **macOS/Linux**: `start.command` 더블클릭 (최초 1회 `chmod +x start.command`)
+
+→ 서버가 뜨고 브라우저가 자동으로 열립니다. 최초 실행 시 가상환경·의존성을 자동 설치합니다(인터넷 필요).
+
+### B. 로그인 시 자동 실행 (항상 켜두기)
+
+한 번 등록해두면 PC를 켤 때마다 자동으로 떠 있어, 브라우저 북마크만 누르면 됩니다.
+
+- **Windows**: `Win+R` → `shell:startup` → 열린 시작프로그램 폴더에 `start-hidden.vbs`의 **바로가기**를 넣기
+- **macOS**: 시스템 설정 → 일반 → 로그인 항목에 `start.command` 추가
+- **Linux**: `~/.config/autostart`에 `.desktop` 항목 추가, 또는 systemd --user 서비스
+
+### C. 예쁜 로컬 도메인 붙이기 (예: `http://progtool.local`)
+
+`localhost:8000` 대신 원하는 이름으로 접속하도록 hosts 파일에 한 줄 추가합니다(관리자 권한 필요).
+
+```
+# Windows: C:\Windows\System32\drivers\etc\hosts
+# macOS/Linux: /etc/hosts
+127.0.0.1   progtool.local
+```
+
+- 그 뒤 브라우저에서 `http://progtool.local:8000` 로 접속.
+- 포트 없이 `http://progtool.local` 로 접속하려면 80포트로 실행: `python run.py --port 80`
+  (Windows는 관리자 콘솔, macOS/Linux는 `sudo` 필요)
+
+> **A+B+C를 합치면**: 로그인하면 자동으로 떠 있고, 브라우저에서 `http://progtool.local`만
+> 치면 들어가는 형태가 됩니다 — 서버 없이 로컬에서.
+
 브라우저에서 `http://<서버IP>:8000` 접속.
 
 ## 화면 구성
