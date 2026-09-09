@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}소스 추출{% endblock %}
+{% block content %}
+<div class="form-head">
+  <h2>소스 추출 · 최신화</h2>
+  <span>워크스페이스 경로를 스캔해 프로그램 목록을 자동 생성합니다 (SVN update 후 다시 실행하세요)</span>
+</div>
+
+<form class="panel entry" method="post" action="/scan" id="scanForm">
+  <div class="grid">
+    <div class="field full">
+      <label for="workspace">워크스페이스 경로 <em>(로컬 SVN 체크아웃 폴더의 절대경로)</em></label>
+      <input type="text" id="workspace" name="workspace" value="{{ workspace }}"
+             placeholder="예) C:\svn\myproject  또는  /home/user/svn/myproject" autofocus>
+    </div>
+    <div class="field">
+      <label for="base_package">회사 패키지 prefix <em>(선택 · 업무분류 추정 정확도↑)</em></label>
+      <input type="text" id="base_package" name="base_package" value="{{ base_package }}"
+             placeholder="예) com.acme">
+    </div>
+    <div class="field">
+      <label>적재 방식</label>
+      <div class="radios">
+        <label class="radio"><input type="radio" name="mode" value="merge"
+          {% if mode != 'replace' %}checked{% endif %}> 병합 <em>(사람이 수정한 값 보존 · 권장)</em></label>
+        <label class="radio"><input type="radio" name="mode" value="replace"
+          {% if mode == 'replace' %}checked{% endif %}> 전체 재구성 <em>(추출 행 초기화)</em></label>
+      </div>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn primary" id="scanBtn">🔍 추출 실행</button>
+    <a href="/" class="btn ghost">목록으로</a>
+  </div>
+</form>
+
+{% if error %}
+  <div class="result-box result-err">⚠ {{ error }}</div>
+{% endif %}
+
+{% if stats %}
+  <div class="result-box result-ok">
+    <div class="result-title">✓ 추출 완료</div>
+    <div class="result-stats">
+      <span class="stat"><b>{{ stats.added }}</b> 신규</span>
+      <span class="stat"><b>{{ stats.updated }}</b> 갱신</span>
+      {% if stats.missing %}<span class="stat warn"><b>{{ stats.missing }}</b> 스캔에 없는 잔여 행</span>{% endif %}
+    </div>
+    {% if result %}
+    <table class="mini">
+      <tr><th>스캔 파일</th><td>{{ result.file_count }}건</td></tr>
+      <tr><th>유형별</th><td>{% for k,v in result.by_type.items() %}{{ k }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}</td></tr>
+      <tr><th>업무분류</th><td>{% for k,v in result.clusters.items() %}{{ k }}({{ v }}){% if not loop.last %} · {% endif %}{% endfor %}</td></tr>
+      <tr><th>테이블({{ result.tables|length }})</th><td>{{ result.tables|join(', ') }}</td></tr>
+    </table>
+    {% endif %}
+    {% if stats.missing %}
+    <p class="hint">※ 잔여 행 = 이번 스캔에 없지만 DB에 남은 소스 행(삭제된 파일일 수 있음). 목록에서 확인 후 삭제하거나, ‘전체 재구성’으로 다시 만드세요.</p>
+    {% endif %}
+    <div class="form-actions">
+      <a href="/" class="btn primary">→ 목록에서 검토하기</a>
+    </div>
+  </div>
+{% endif %}
+
+<script>
+  // 마지막 입력값 기억 (해당 브라우저에서만)
+  (function () {
+    try {
+      const ws = document.getElementById("workspace");
+      const bp = document.getElementById("base_package");
+      if (!ws.value) ws.value = localStorage.getItem("scan_ws") || "";
+      if (!bp.value) bp.value = localStorage.getItem("scan_bp") || "";
+      document.getElementById("scanForm").addEventListener("submit", function () {
+        try {
+          localStorage.setItem("scan_ws", ws.value);
+          localStorage.setItem("scan_bp", bp.value);
+        } catch (e) {}
+        const btn = document.getElementById("scanBtn");
+        btn.textContent = "추출 중… (잠시만요)";
+        btn.disabled = true;
+      });
+    } catch (e) {}
+  })();
+</script>
+{% endblock %}

@@ -75,4 +75,20 @@ td.nowrap { white-space: nowrap; }
 }
 .form-actions { margin-top: 18px; display: flex; gap: 8px; }
 
+/* 소스 추출 화면 */
+.radios { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.radio { font-size: 13px; font-weight: normal; color: #333; display: flex; align-items: center; gap: 6px; }
+.radio em { color: #9aa4b2; font-style: normal; }
+.result-box { margin-top: 16px; border-radius: 8px; padding: 16px 18px; border: 1px solid; }
+.result-ok { background: #eef7f0; border-color: #bfe0c8; }
+.result-err { background: #fdecee; border-color: #f2c2c7; color: #9e2a33; }
+.result-title { font-size: 16px; font-weight: bold; color: #217346; margin-bottom: 10px; }
+.result-stats { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+.result-stats .stat { font-size: 13px; color: #445; }
+.result-stats .stat b { font-size: 20px; color: #1f4e78; margin-right: 3px; }
+.result-stats .stat.warn b { color: #b7791f; }
+table.mini { border-collapse: collapse; margin: 6px 0; }
+table.mini th { text-align: left; color: #667; font-weight: 600; padding: 4px 14px 4px 0; vertical-align: top; white-space: nowrap; }
+table.mini td { padding: 4px 0; color: #223; }
+
 @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }

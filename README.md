@@ -61,10 +61,15 @@ python run.py --workspace sample_workspace --base-package com.acme
 ## 화면 구성
 
 - `/` — 목록·통합검색·필터, Excel/PPT 내보내기 버튼
+- `/scan` — **소스 추출·최신화** (워크스페이스 경로 입력 → 추출 → DB 병합, CLI 없이 브라우저에서)
 - `/new` — 신규 등록 폼
 - `/edit/{id}` — 수정
 - `/export/excel`, `/export/pptx` — 현재 검색결과 반영 산출물 다운로드
 - `/api/programs` — 검색/조회 JSON API (외부 연동·자동화용)
+
+> **전 과정 GUI**: 웹앱을 한 번 띄운 뒤(`python run.py`)에는 추출·검토·수정·검색·산출물까지
+> 모두 브라우저에서 수행할 수 있습니다. `svn update` 후 "소스 추출" 메뉴에서 경로를 입력하고
+> "추출 실행"만 누르면 됩니다(명령줄 재실행 불필요).
 
 ## 컬럼
 
@@ -159,6 +164,7 @@ Eclipse 워크스페이스/프로젝트 소스를 **스캔하여 프로그램 �
 - [x] ① 결정적 추출기 (파일분류·테이블·호출관계)
 - [x] 재추출 안전 병합(upsert) — svn update 후 재실행해도 사람 편집 보존
 - [x] 크로스플랫폼 로컬 실행기 `run.py` (추출→병합→실행 원클릭)
+- [x] 웹 GUI 추출 화면 `/scan` — 브라우저에서 경로 입력만으로 추출·최신화
 - [ ] ② Claude Code 스킬 `/analyze-workspace` — 추출 결과를 근거로 업무 분석 초안 생성
 - [ ] SVN 연동 `구분(신규/수정)` 자동 표기 (`svn status` 기반)
 - [ ] Excel 일괄 업로드(기존 관리 엑셀 가져오기)

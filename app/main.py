@@ -2,6 +2,7 @@
 
 화면(웹 입력/검색/조회) + 산출물 내보내기(Excel/PPT) + 간단한 JSON API 제공.
 """
+import os
 import urllib.parse
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from app import crud
 from app.database import get_db, init_db
 from app.exporters.excel import build_program_list
 from app.exporters.pptx import build_flow_diagram
+from app.extractor import scan_workspace
 from app.models import COLUMNS
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -74,6 +76,43 @@ def index(
             "query_string": urllib.parse.urlencode({k: v for k, v in current.items() if v}),
         },
     )
+
+
+@app.get("/scan", response_class=HTMLResponse)
+def scan_form(request: Request):
+    return templates.TemplateResponse(
+        "scan.html",
+        {"request": request, "result": None, "stats": None, "error": None,
+         "workspace": "", "base_package": "", "mode": "merge"},
+    )
+
+
+@app.post("/scan", response_class=HTMLResponse)
+async def scan_run(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    workspace = (form.get("workspace") or "").strip()
+    base_package = (form.get("base_package") or "").strip() or None
+    mode = form.get("mode") or "merge"
+
+    ctx = {"request": request, "result": None, "stats": None, "error": None,
+           "workspace": workspace, "base_package": base_package or "", "mode": mode}
+
+    if not workspace:
+        ctx["error"] = "워크스페이스 경로를 입력하세요."
+    elif not os.path.isdir(workspace):
+        ctx["error"] = f"경로를 찾을 수 없거나 폴더가 아닙니다: {workspace}"
+    else:
+        try:
+            result = scan_workspace(workspace, base_package=base_package)
+            rows = [{k: v for k, v in p.items() if not k.startswith("_")}
+                    for p in result["programs"]]
+            stats = crud.upsert_programs(db, rows, replace=(mode == "replace"))
+            ctx["result"] = result["summary"]
+            ctx["stats"] = stats
+        except Exception as exc:  # noqa: BLE001 - 사용자에게 원인 표시
+            ctx["error"] = f"추출 중 오류: {exc}"
+
+    return templates.TemplateResponse("scan.html", ctx)
 
 
 @app.get("/new", response_class=HTMLResponse)
