@@ -48,6 +48,11 @@ SEARCHABLE_FIELDS = [
 
 DATE_FIELDS = [name for name, _, typ in COLUMNS if typ == "date"]
 
+# 재추출(svn update 후) 시 갱신할 '추출기 소유' 구조 필드.
+# 나머지(업무분류·프로그램명·우선순위·담당자·날짜·비고 등)는 사람이 확정하는 값이라
+# 재추출해도 덮어쓰지 않고 보존한다.
+REFRESH_ON_UPSERT = ["program_type", "impl_type", "path"]
+
 
 class Program(Base):
     """프로그램 목록의 한 행."""
@@ -55,6 +60,10 @@ class Program(Base):
     __tablename__ = "programs"
 
     id = Column(Integer, primary_key=True, index=True)
+
+    # 소스 파일 안정 식별자(경로/파일명). 재추출 시 같은 행을 찾기 위한 키.
+    # 사람이 웹에서 직접 등록한 행은 NULL.
+    source_key = Column(String(800), unique=True, index=True)
 
     biz_category = Column(String(100), index=True)
     program_level1 = Column(String(100), index=True)

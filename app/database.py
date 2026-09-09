@@ -28,7 +28,30 @@ def get_db():
 
 
 def init_db():
-    """테이블 생성. 앱 시작 시 1회 호출."""
+    """테이블 생성 + 경량 마이그레이션. 앱 시작 시 1회 호출."""
     import app.models  # noqa: F401  (모델 등록을 위해 import)
 
     Base.metadata.create_all(bind=engine)
+    _ensure_columns()
+
+
+def _ensure_columns():
+    """기존 SQLite DB에 신규 컬럼이 없으면 추가 (간단 마이그레이션).
+
+    정식 마이그레이션 도구(alembic) 없이 PoC 수준에서 스키마 진화를 지원한다.
+    """
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if "programs" not in inspector.get_table_names():
+        return
+    existing = {c["name"] for c in inspector.get_columns("programs")}
+    if "source_key" not in existing:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE programs ADD COLUMN source_key VARCHAR(800)"))
+            conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_programs_source_key "
+                "ON programs (source_key)"
+            ))

@@ -1,8 +1,19 @@
 # 프로그램 목록 / 업무흐름도 관리 (폐쇄망 대응 PoC)
 
-Eclipse 소스 개발 업무를 정리하기 위한 웹 애플리케이션입니다.
-사람이 웹으로 프로그램 정보를 입력하면 **DB에 저장·검색·조회**되고,
-버튼 한 번으로 **프로그램 목록(Excel)** 과 **업무흐름도(PPT)** 산출물을 내려받을 수 있습니다.
+Eclipse/SVN 소스 개발 업무를 정리하기 위한 도구입니다.
+**개발자 PC 한 대에서 완결**되도록 설계되어, 별도 서버 없이 로컬에서 실행합니다.
+소스를 스캔해 프로그램 목록을 자동 생성하고, 웹 화면으로 **검토·수정·검색**한 뒤
+버튼 한 번으로 **프로그램 목록(Excel)** 과 **업무흐름도(PPT)** 산출물을 만듭니다.
+
+일상 사용 흐름:
+
+```
+svn update  →  python run.py --workspace <경로>  →  브라우저에서 검토·수정  →  Excel/PPT 내보내기
+   (최신화)        (추출 → DB 병합 → 웹앱 실행)          (localhost)              (산출물)
+```
+
+재추출해도 **사람이 확정한 값(업무분류·업무명·담당자 등)은 보존**되고 구조 정보만 갱신되므로,
+`svn update` 후 몇 번이고 안전하게 다시 돌릴 수 있습니다.
 
 ## 특징
 
@@ -27,17 +38,23 @@ Eclipse 소스 개발 업무를 정리하기 위한 웹 애플리케이션입니
 ## 실행 방법
 
 ```bash
-# 1) 의존성 설치 (폐쇄망에서는 사전에 wheel 반입 후 오프라인 설치)
-python3 -m venv .venv
-./.venv/bin/pip install -r requirements.txt
+# 1) 의존성 설치 (최초 1회)
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt      # Windows
+# ./.venv/bin/pip install -r requirements.txt        # macOS/Linux
 
-# 2) (선택) 샘플 데이터 넣기
-./.venv/bin/python seed_sample.py
+# 2) 최신화 + 실행 (평소 사용) — 추출→DB병합→브라우저 자동 실행
+python run.py --workspace C:\eclipse-workspace\myproject --base-package com.acme
 
-# 3) 서버 실행
-./.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
-#   또는  ./run.sh
+# 웹앱만 실행 (추출 없이)
+python run.py
+
+# 샘플로 먼저 체험해보기
+python run.py --workspace sample_workspace --base-package com.acme
 ```
+
+> Windows PC 기준으로 `python run.py` 하나면 됩니다. `.sh`/`uvicorn` 직접 실행도 가능하지만
+> `run.py`가 크로스플랫폼이라 가장 간단합니다.
 
 브라우저에서 `http://<서버IP>:8000` 접속.
 
@@ -64,16 +81,32 @@ python3 -m venv .venv
 - **호출 흐름** : `프로그램유형`을 키워드로 계층 매핑 (화면 → Controller → Service → Mapper → DB)
   - 매핑 키워드는 `app/exporters/pptx.py`의 `LAYERS`에서 조정
 
-## 폐쇄망 반입 메모
+## 로컬 배포 (개발자 PC 1대 완결)
 
-인터넷이 없는 환경에서는 외부망 PC에서 wheel을 미리 받아 반입 후 설치합니다.
+서버가 필요 없습니다. 각 개발자가 자기 PC에서 SVN 최신 소스를 기준으로 추출·검토·산출물화까지
+모두 수행합니다. 데이터(`app.db`)와 산출물도 그 PC 안에만 존재합니다.
+
+- **실행 대상**: 개발자 각자의 PC (소스가 있는 곳)
+- **소스 기준**: `svn update`로 받은 로컬 워크스페이스 경로
+- **DB**: 로컬 SQLite 파일 1개(`app.db`) — PC별 독립. 필요 시 팀 공유는 파일 복사로 충분
+- **웹앱**: `localhost`에서만 뜸 (`--host 127.0.0.1` 기본) — 외부 노출 없음
+
+### 폐쇄망 오프라인 설치
+
+인터넷이 없는 PC에서는 외부망에서 wheel을 미리 받아 반입 후 설치합니다.
 
 ```bash
 # (외부망) 다운로드
 pip download -r requirements.txt -d wheels/
-# (폐쇄망) 오프라인 설치
+# (사내 PC) 오프라인 설치
 pip install --no-index --find-links=wheels/ -r requirements.txt
 ```
+
+### (선택) 팀 공유 서버로 확대
+
+회사 승인을 받아 공유 서버에 올릴 경우, `DATABASE_URL`을 PostgreSQL로 바꾸고
+`--host 0.0.0.0`으로 실행하면 그대로 다인 사용이 가능합니다(코드 변경 불필요).
+그 경우 "개발자 PC 분석 → 서버 적재"를 위한 업로드 API를 추가하면 됩니다.
 
 ## 소스 워크스페이스 자동 추출기 (`extract_workspace.py`)
 
@@ -124,6 +157,8 @@ Eclipse 워크스페이스/프로젝트 소스를 **스캔하여 프로그램 �
 ## 향후 로드맵
 
 - [x] ① 결정적 추출기 (파일분류·테이블·호출관계)
+- [x] 재추출 안전 병합(upsert) — svn update 후 재실행해도 사람 편집 보존
+- [x] 크로스플랫폼 로컬 실행기 `run.py` (추출→병합→실행 원클릭)
 - [ ] ② Claude Code 스킬 `/analyze-workspace` — 추출 결과를 근거로 업무 분석 초안 생성
+- [ ] SVN 연동 `구분(신규/수정)` 자동 표기 (`svn status` 기반)
 - [ ] Excel 일괄 업로드(기존 관리 엑셀 가져오기)
-- [ ] 인증/권한(로그인), 첨부파일, 변경이력

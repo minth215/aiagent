@@ -4,7 +4,7 @@ from datetime import date
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.models import COLUMNS, DATE_FIELDS, SEARCHABLE_FIELDS, Program
+from app.models import COLUMNS, DATE_FIELDS, REFRESH_ON_UPSERT, SEARCHABLE_FIELDS, Program
 
 
 def _parse_value(name: str, raw):
@@ -37,6 +37,62 @@ def create_program(db: Session, data: dict) -> Program:
 
 def get_program(db: Session, program_id: int) -> Program | None:
     return db.query(Program).filter(Program.id == program_id).first()
+
+
+def _source_key(data: dict) -> str:
+    path = (data.get("path") or "").rstrip("/")
+    return f"{path}/{data.get('file_name') or ''}"
+
+
+def upsert_programs(db: Session, programs: list[dict], replace: bool = False) -> dict:
+    """추출 결과를 DB에 병합 적재.
+
+    replace=True  : 추출기가 만든 기존 행(source_key 보유)을 모두 지우고 새로 넣는다.
+    replace=False : source_key 기준으로 병합. 신규 파일은 추가하고, 기존 파일은
+                    구조 필드(REFRESH_ON_UPSERT)만 갱신하며 사람이 확정한 값은 보존한다.
+
+    반환: {added, updated, missing} — missing은 이번 스캔에 없지만 DB에 남은 소스 행 수.
+    """
+    if replace:
+        db.query(Program).filter(Program.source_key.isnot(None)).delete(synchronize_session=False)
+        db.commit()
+
+    scanned_keys = set()
+    added = updated = 0
+
+    for data in programs:
+        key = _source_key(data)
+        scanned_keys.add(key)
+        existing = db.query(Program).filter(Program.source_key == key).first()
+
+        if existing is None:
+            kwargs = form_to_kwargs(data)
+            program = Program(source_key=key, **kwargs)
+            db.add(program)
+            added += 1
+        else:
+            # 구조 필드만 갱신, 사람이 입력한 값은 보존
+            for field in REFRESH_ON_UPSERT:
+                if field in data:
+                    setattr(existing, field, _parse_value(field, data.get(field)))
+            updated += 1
+
+    db.commit()
+
+    missing = (
+        db.query(Program)
+        .filter(Program.source_key.isnot(None))
+        .filter(Program.source_key.notin_(scanned_keys) if scanned_keys else True)
+        .count()
+    )
+    return {"added": added, "updated": updated, "missing": missing}
+
+
+def clear_source_programs(db: Session) -> int:
+    """추출기가 만든 행(source_key 보유)만 삭제. 수동 등록 행은 유지."""
+    n = db.query(Program).filter(Program.source_key.isnot(None)).delete(synchronize_session=False)
+    db.commit()
+    return n
 
 
 def update_program(db: Session, program_id: int, data: dict) -> Program | None:
